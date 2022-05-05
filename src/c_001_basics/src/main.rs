@@ -5,6 +5,7 @@ use std::io;
 use regex::Regex;
 use clap::{App, Arg};
 
+//cargo run -- better poem.txt
 fn main() {
     let args = App::new("grep-lite")
         .version("0.1")
