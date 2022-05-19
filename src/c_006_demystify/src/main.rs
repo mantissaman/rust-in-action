@@ -1,60 +1,85 @@
 // Lifetime, Ownerships and Borrowing
-
-type Message=String;
-
+#![allow(unused_variables)]
 
 #[derive(Debug)]
-struct Mailbox {
-    messages: Vec<Message>
-}
-
-#[derive(Debug)]
-struct CubeSat {
+struct CubeSat{
     id: u64,
-    mailbox: Mailbox
-}
-impl CubeSat{
-    fn recv(&mut self) -> Option<Message>{
-        self.mailbox.messages.pop()
-    }
-}
-
-struct GroundStation;
-
-impl GroundStation{
-    fn send(&self, to:&mut CubeSat, msg: Message){
-        to.mailbox.messages.push(msg);
-    }
 }
 
 #[derive(Debug)]
-enum StatusMessage{
-    Ok,
+struct Mailbox{
+    messages: Vec<Message>,
 }
 
-// fn check_status(sat_id: CubeSat) ->StatusMessage {
-//     StatusMessage::Ok
-// }
+#[derive(Debug)]
+struct Message{
+    to: u64,
+    content: String,
+}
+
+struct GroundStation {}
+
+impl Mailbox{
+    fn post(&mut self, msg: Message){
+        self.messages.push(msg);
+    }
+
+    fn deliver(&mut self, recepient: &CubeSat) -> Option<Message>{
+        for i in 0..self.messages.len(){
+            if self.messages[i].to == recepient.id {
+                let msg = self.messages.remove(i);
+                return Some(msg);
+            }
+        }
+        None
+    }
+}
+
+impl GroundStation {
+    fn connect(&self, sat_id: u64) -> CubeSat {
+        CubeSat { id: sat_id }
+    }
+
+    fn send(&self, mailbox: &mut Mailbox, msg: Message) {
+        mailbox.post(msg)
+    }
+}
+
+impl CubeSat {
+    fn recv(&self, mailbox: &mut Mailbox) -> Option<Message> {
+        mailbox.deliver(&self)
+    }
+}
+
+fn fetch_sat_ids() -> Vec<u64>{
+    vec![1,2,3]
+}
 
 fn main() {
-    let base = GroundStation{};
+    let mut mail = Mailbox{messages: vec![]};
+    let base = GroundStation {};
+    let sat_ids =fetch_sat_ids();
 
-    let mut sat_a = CubeSat {
-        id: 0,
-        mailbox: Mailbox { 
-            messages: vec![] 
-        },
-    };
+    for sat_id in sat_ids {
+        let sat = base.connect(sat_id);
+        let msg = Message {to: sat_id, content: format!("Hello to {} from the station.", sat_id)};
+        base.send(&mut mail, msg);
+    }
 
-    println!("t0 : {:?}", sat_a);
-    base.send(&mut sat_a, Message::from("hello Satellite A!!"));
+    let sat_ids = fetch_sat_ids();
 
-    println!("t1 : {:?}", sat_a);
+    for sat_id in sat_ids {
+        let sat = base.connect(sat_id);
+        let msg = sat.recv(&mut mail);
+        println!("{:?}: {:?}", sat, msg);
+    }
 
-    let sat_a_read_msg = sat_a.recv();
-    println!("msg read by sattelite : {:?}", sat_a_read_msg.unwrap());
-    println!("t2 : {:?}", sat_a);
-    
-
+    let a = "Atul".to_owned();
+   
+    print_name(a.clone());
+    print_name(a);
+    //print_name(a);
 }
-    
+fn print_name(a: String){
+    println!("{}", a);
+}
